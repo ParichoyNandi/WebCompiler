@@ -1,13 +1,20 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 import subprocess
 import sys
 import os
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins='*')
+
 @app.route('/')
 def index():
+    return send_from_directory('', 'index.html') #initial page name
+
+@app.route('/editor') 
+def editor():
     return send_from_directory('', 'Compiler.html')
 
 @app.route('/run', methods=['POST'])
@@ -42,5 +49,10 @@ def run_code():
 
     return jsonify({'output': output})
 
+@socketio.on('code_change')
+def handle_code_change(data):
+    print('Code change received:', data) 
+    emit('code_update', data, broadcast=True)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
